@@ -3,12 +3,13 @@ import { ChatMessage, ChatInputData } from '@/types/chat';
 import { useSpeech } from '@/hooks/useSpeech';
 import { useLocation } from '@/hooks/useLocation';
 
-import WakeWordIndicator from './status/WakeWordIndicator';
 import ProcessingIndicator from './status/ProcessingIndicator';
 import RecognitionResult from './status/RecognitionResult';
 import LocationStatus from './status/LocationStatus';
 import ChatMessageList from './message/ChatMessageList';
 import ChatInput from './input/ChatInput';
+import ThemeToggle from '../ThemeToggle';
+import ProfileIcon from '../ProfileIcon';
 
 interface ChatInterfaceProps {
   messages?: ChatMessage[];
@@ -26,7 +27,6 @@ export default function ChatInterface({
 
   const {
     isRecording,
-    isListening,
     recognitionResult,
     intentResult,
     startRecording,
@@ -89,8 +89,14 @@ export default function ChatInterface({
 
   return (
     <div className="flex flex-col h-full bg-background">
+      {/* Header with profile icon and theme toggle */}
+      <div className="flex justify-between items-center p-3 border-b border-border">
+        <ProfileIcon farmerName="राजू पाटील" />
+        <ThemeToggle />
+      </div>
+      
       {/* Status indicators */}
-      <WakeWordIndicator isListening={isListening} />
+     
       <ProcessingIndicator isProcessing={isProcessingAI} />
       <RecognitionResult 
         recognitionResult={recognitionResult}

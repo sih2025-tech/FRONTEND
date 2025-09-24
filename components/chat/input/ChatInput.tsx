@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { 
@@ -6,7 +6,8 @@ import {
   MicOff, 
   Send, 
   Camera, 
-  Upload
+  Upload,
+  Paperclip
 } from 'lucide-react';
 import { ChatInputData, IntentClassificationResult } from '@/types/chat';
 import { detectLanguage } from '@/utils/chat';
@@ -39,8 +40,27 @@ export default function ChatInput({
 }: ChatInputProps) {
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [isAttachmentMenuOpen, setIsAttachmentMenuOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
+  const attachmentMenuRef = useRef<HTMLDivElement>(null);
+
+  // Close menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (attachmentMenuRef.current && !attachmentMenuRef.current.contains(event.target as Node)) {
+        setIsAttachmentMenuOpen(false);
+      }
+    };
+
+    if (isAttachmentMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isAttachmentMenuOpen]);
 
   const handleTextSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -116,7 +136,7 @@ export default function ChatInput({
       <div className="border-t bg-background p-4">
         <form onSubmit={handleTextSubmit} className="space-y-3">
           {/* Input row */}
-          <div className="flex gap-2">
+          <div className="flex gap-2 relative">
             <Input
               value={inputText}
               onChange={(e) => onInputChange(e.target.value)}
@@ -126,41 +146,76 @@ export default function ChatInput({
               disabled={isRecording || isLoading}
             />
             
-            {/* Voice input button */}
-            <Button
-              type="button"
-              size="icon"
-              variant={isRecording ? "destructive" : "outline"}
-              onClick={isRecording ? onStopRecording : onStartRecording}
-              data-testid="button-voice"
-              disabled={isLoading}
-            >
-              {isRecording ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
-            </Button>
-            
-            {/* Camera input */}
-            <Button
-              type="button"
-              size="icon"
-              variant="outline"
-              onClick={() => cameraInputRef.current?.click()}
-              data-testid="button-camera"
-              disabled={isLoading}
-            >
-              <Camera className="w-4 h-4" />
-            </Button>
-            
-            {/* File upload */}
-            <Button
-              type="button"
-              size="icon"
-              variant="outline"
-              onClick={() => fileInputRef.current?.click()}
-              data-testid="button-upload"
-              disabled={isLoading}
-            >
-              <Upload className="w-4 h-4" />
-            </Button>
+            {/* Attachment Menu Button */}
+            <div className="relative" ref={attachmentMenuRef}>
+              <Button
+                type="button"
+                size="icon"
+                variant="outline"
+                onClick={() => setIsAttachmentMenuOpen(!isAttachmentMenuOpen)}
+                disabled={isLoading}
+                data-testid="button-attachment"
+              >
+                <Paperclip className="w-4 h-4" />
+              </Button>
+              
+              {/* Attachment Menu Dropdown */}
+              {isAttachmentMenuOpen && (
+                <div className="absolute bottom-full mb-2 right-0 bg-background border rounded-lg shadow-lg p-2 min-w-[200px] z-10">
+                  {/* Voice input button */}
+                  <Button
+                    type="button"
+                    variant={isRecording ? "destructive" : "ghost"}
+                    onClick={() => {
+                      if (isRecording) {
+                        onStopRecording();
+                      } else {
+                        onStartRecording();
+                      }
+                      setIsAttachmentMenuOpen(false);
+                    }}
+                    data-testid="button-voice"
+                    disabled={isLoading}
+                    className="w-full justify-start gap-2"
+                  >
+                    {isRecording ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+                    {isRecording ? 'Stop Recording' : 'Voice Input'}
+                  </Button>
+                  
+                  {/* Camera input */}
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={() => {
+                      cameraInputRef.current?.click();
+                      setIsAttachmentMenuOpen(false);
+                    }}
+                    data-testid="button-camera"
+                    disabled={isLoading}
+                    className="w-full justify-start gap-2"
+                  >
+                    <Camera className="w-4 h-4" />
+                    Take Photo
+                  </Button>
+                  
+                  {/* File upload */}
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={() => {
+                      fileInputRef.current?.click();
+                      setIsAttachmentMenuOpen(false);
+                    }}
+                    data-testid="button-upload"
+                    disabled={isLoading}
+                    className="w-full justify-start gap-2"
+                  >
+                    <Upload className="w-4 h-4" />
+                    Upload File
+                  </Button>
+                </div>
+              )}
+            </div>
             
             {/* Send button */}
             <Button
